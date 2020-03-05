@@ -5,8 +5,8 @@
     <title>Title</title>
 </head>
 <body>
+<div id="result"></div>
 
-</body>
 <script src="../dist/nano.js" type="text/javascript"></script>
 <script type="text/javascript">
 
@@ -16,7 +16,7 @@
         let data = { todo_index: '1', todo: todo};
 
         let template = new NTemplate('#switch');
-        template.render(data, 'body');
+        template.render(data, '#result');
     });
 </script>
 <template id="switch">
@@ -42,7 +42,7 @@
         <div nn:case="0">
             Task 0
         </div>
-        <div nn:case="1">
+        <div nn:case="1" class="kept-ul-container">
             <ul class="tag-loop">
                 <nn:loop on="todo" as="task">
                     <li class="todo-item todo_{{ _index_ }}">
@@ -55,7 +55,8 @@
             Task 2
         </div>
     </nn:switch>
-
-
 </template>
+
+</body>
+
 </html>

@@ -112,6 +112,11 @@ class NTemplateContext {
                 instance.process(this, this.node, nano_attributes, html_attributes);
             }
         }
+        if(this.add) {
+            for(let attr in html_attributes) {
+                this.attributes[attr] = this.eval_string(html_attributes[attr]);
+            }
+        }
     }
 
     process_html_attr(html_attributes) {
@@ -406,6 +411,27 @@ class NCallableTagProcessor {
 window.addEventListener('DOMContentLoaded', (event) => {
     NTemplateProcessor.registerTag(NCallableTagProcessor);
 });
+class NIfTagProcessor {
+
+    static _name = 'if';
+
+    process(context, elt, attributes) {
+        let value = context.get(attributes['test']);
+        context.hide();
+
+        if(value === true) {
+            let children = context.node.childNodes;
+            if(children.length > 0) {
+                children.forEach(function(child, index) {
+                    let child_context = new NTemplateContext({}, child, context.parent);
+                    child_context.process();
+                }, this);
+            }
+        }
+    }
+}
+
+
 class NIfAttributeProcessor {
 
     static _name = 'if';
@@ -417,6 +443,26 @@ class NIfAttributeProcessor {
             NTemplateContext.clear_nano_attributes(elt, nano_attributes);
         } else {
             context.hide();
+        }
+    }
+}
+
+class NIfNotTagProcessor {
+
+    static _name = 'if-not';
+
+    process(context, elt, attributes) {
+        let value = context.get(attributes['test']);
+        context.hide();
+
+        if(value === false) {
+            let children = context.node.childNodes;
+            if(children.length > 0) {
+                children.forEach(function(child, index) {
+                    let child_context = new NTemplateContext({}, child, context.parent);
+                    child_context.process();
+                }, this);
+            }
         }
     }
 }
@@ -436,7 +482,12 @@ class NIfNotAttributeProcessor {
     }
 }
 
+
+
 window.addEventListener('DOMContentLoaded', (event) => {
+    NTemplateProcessor.registerTag(NIfTagProcessor);
+    NTemplateProcessor.registerTag(NIfNotTagProcessor);
+
     NTemplateProcessor.registerAttr(NIfAttributeProcessor);
     NTemplateProcessor.registerAttr(NIfNotAttributeProcessor);
 });

@@ -112,6 +112,11 @@ class NTemplateContext {
                 instance.process(this, this.node, nano_attributes, html_attributes);
             }
         }
+        if(this.add) {
+            for(let attr in html_attributes) {
+                this.attributes[attr] = this.eval_string(html_attributes[attr]);
+            }
+        }
     }
 
     process_html_attr(html_attributes) {

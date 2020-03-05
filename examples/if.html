@@ -5,32 +5,36 @@
     <title>Title</title>
 </head>
 <body>
-
 <div id="result"></div>
+
 <script src="../dist/nano.js" type="text/javascript"></script>
 <script type="text/javascript">
-
     window.addEventListener('DOMContentLoaded', (event) => {
-        let html = '<strong>big</strong>';
-        let data = { name: 'liva', html: html, gender: 'male'};
-
+        let data = { show: true};
         let template = new NTemplate('#hello-world');
         template.render(data, '#result');
     });
-
 </script>
 
 <template id="hello-world">
-    <div>
-        test
-        <h1 class="title">{{ name }}</h1>
-        <p nn:text="html"></p>
 
-        <p nn:text-escape="html"></p>
-    </div>
-    <p>I am a {{ gender }}</p>
+    <p nn:if="show">
+        shoud be displayed
+    </p>
+    <p nn:if-not="show">
+        shoud NOT be displayed
+    </p>
+
+    <nn:if test="show">
+        shoud be displayed TAG
+    </nn:if>
+
+    <nn:if-not test="show">
+
+    </nn:if-not>
+
 </template>
-
 </body>
+
 
 </html>
