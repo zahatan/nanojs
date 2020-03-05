@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:nn="https://github.com/zahatan/nanojs">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+<script src="../dist/nano.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+    window.addEventListener('DOMContentLoaded', (event) => {
+        let todo = [{id: 1, name: 'Task 1'}, {id: 2, name: 'Task 2'}, {id: 3, name: 'Task 3'}];
+
+        let data = { todo_index: '1', todo: todo};
+
+        let template = new NTemplate('#switch');
+        template.render(data, 'body');
+    });
+</script>
+<template id="switch">
+    <nn:switch on="todo_index">
+        <nn:case value="0">
+            Task 0
+        </nn:case>
+        <nn:case value="1">
+            <ul class="tag-loop">
+                <nn:loop on="todo" as="task">
+                    <li class="todo-item todo_{{ _index_ }}">
+                        {{ _index_ }} : <span nn:text="task.name"></span>
+                    </li>
+                </nn:loop>
+            </ul>
+        </nn:case>
+        <nn:case value="2">
+            Task 2
+        </nn:case>
+    </nn:switch>
+
+    <nn:switch on="todo_index">
+        <div nn:case="0">
+            Task 0
+        </div>
+        <div nn:case="1">
+            <ul class="tag-loop">
+                <nn:loop on="todo" as="task">
+                    <li class="todo-item todo_{{ _index_ }}">
+                        {{ _index_ }} : <span nn:text="task.name"></span>
+                    </li>
+                </nn:loop>
+            </ul>
+        </div>
+        <div nn:case="2">
+            Task 2
+        </div>
+    </nn:switch>
+
+
+</template>
+</html>
