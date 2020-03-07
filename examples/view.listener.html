@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:nn="https://github.com/zahatan/nanojs">
+<head>
+    <meta charset="UTF-8">
+    <title>View example</title>
+</head>
+<body>
+
+<div id="view_1">
+    <input id="input_1" type="text" name="name" value="">
+</div>
+
+<div class="view_2"></div>
+<div class="view_2"></div>
+<div class="view_2"></div>
+<div class="view_2"></div>
+<div class="view_2"></div>
+
+<script src="../dist/nano.js" type="text/javascript"></script>
+<script type="text/javascript">
+    window.addEventListener('DOMContentLoaded', (event) => {
+        class InputListener1 extends NViewListener{
+            constructor() {
+                super();
+            }
+            on_click(event){
+                console.log('click', this.view);
+            }
+            on_keyup(event){
+                console.log('keyup_1', event);
+            }
+        }
+
+        class InputListener2 extends NViewListener{
+            constructor() {
+                super();
+            }
+            on_click(event){
+                console.log(this.view);
+            }
+            on_keyup(event){
+                console.log('keyup_2', event);
+            }
+        }
+
+        let view = new NView('#input_1', {
+            listeners: [InputListener1, InputListener2]
+        });
+
+    });
+
+</script>
+</body>
+</html>
