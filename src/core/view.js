@@ -10,7 +10,6 @@ class NView {
         this.listeners = [];
 
         this._setupViewID();
-        this.options = options;
         this.elt.setAttribute('nano-view', '');
 
         this.options = new NOption(options);
