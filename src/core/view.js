@@ -105,9 +105,3 @@ class NViewBuilder {
         return id;
     }
 }
-
-class NViewListener {
-    constructor() {
-        this.view = undefined;
-    }
-}

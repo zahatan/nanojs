@@ -521,12 +521,6 @@ class NViewBuilder {
         return id;
     }
 }
-
-class NViewListener {
-    constructor() {
-        this.view = undefined;
-    }
-}
 class NCallableTagProcessor {
 
     static _name = 'callable';

@@ -19,24 +19,21 @@
 <script src="../dist/nano.js" type="text/javascript"></script>
 <script type="text/javascript">
     window.addEventListener('DOMContentLoaded', (event) => {
-        class InputListener1 extends NViewListener{
+        class InputListener1 {
             constructor() {
-                super();
-            }
-            on_click(event){
-                console.log('click', this.view);
+
             }
             on_keyup(event){
                 console.log('keyup_1', event);
             }
+            on_change(event) {
+                console.log('the value has changed');
+            }
         }
 
-        class InputListener2 extends NViewListener{
+        class InputListener2 {
             constructor() {
-                super();
-            }
-            on_click(event){
-                console.log(this.view);
+
             }
             on_keyup(event){
                 console.log('keyup_2', event);
