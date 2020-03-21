@@ -80,10 +80,6 @@ class NRequest {
      */
     send(data) {
 
-        if(data !== undefined && !(data instanceof NRequestData)) {
-            console.error();
-        }
-
         let url = this.url;
         let method = this.method.toUpperCase();
 
@@ -100,7 +96,10 @@ class NRequest {
         if(method === 'GET') {
             this.xhr.send();
         } else {
-            this.xhr.send(data.toFormData());
+            if(data instanceof NRequestData) {
+                data = data.toFormData();
+            }
+            this.xhr.send(data);
         }
     }
 }
@@ -213,7 +212,7 @@ class NRequestStateListener {
                         let handler = request.response_handlers[i];
                         if(handler) {
 
-                            if(handler instanceof JsonResponseHandler) {
+                            if(request.options.get('type') === 'json') {
                                 try {
                                     response_json = JSON.parse(xhr.responseText);
                                 }
@@ -223,12 +222,12 @@ class NRequestStateListener {
 
                             if(xhr.status >= 200 && xhr.status < 400) {
                                 if(handler.on_request_success) {
-                                    handler.on_request_success.call(handler, xhr.status, xhr.responseText, response_json);
+                                    handler.on_request_success.call(handler, xhr.status, response_json || xhr.responseText);
                                 }
 
                             } else if(xhr.status >= 400) {
                                 if(handler.on_request_error) {
-                                    handler.on_request_error.call(handler, xhr.status, xhr.responseText, response_json);
+                                    handler.on_request_error.call(handler, xhr.status, response_json || xhr.responseText);
                                 }
                             }
                         }
@@ -240,6 +239,26 @@ class NRequestStateListener {
     }
 }
 
-class JsonResponseHandler {
+class RedirectResponseHandler {
+    on_request_success(xhr, response, json) {
+        if(response.hasOwnProperty('next')) {
+            window.location.href = response.next;
+        } else {
+            window.location.reload();
+        }
+    }
 
+    on_request_error(xhr, response, json) {
+
+    }
+}
+
+class ReloadResponseHandler {
+    on_request_success(xhr, response, json) {
+        window.location.reload();
+    }
+
+    on_request_error(xhr, response, json) {
+
+    }
 }

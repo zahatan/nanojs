@@ -8,7 +8,7 @@
 
 <div>
     <input id="task-field" type="text" name="task" value=""/>
-    <button type="button" id="add-button">Add</button>
+    <button type="button" id="add-button">Add <nn:watch with="index"/></button>
 </div>
 
 <div class="todo-container">
@@ -26,18 +26,22 @@
 
         let index = 0;
 
+        let p = new Proxy();
 
-        class AddButtonListener {
+
+        class AddButtonListener extends NListener {
             on_click(event) {
                 let task = new Task();
                 task.title = 'todo #' + index++;
                 task.description = task_field.value;
                 template.render({task: task}, '.todo-container');
                 task_field.value = '';
+
+
             }
         }
 
-        let view = new NView('#add-button', {
+        new NView('#add-button', {
             listeners: [AddButtonListener]
         });
 

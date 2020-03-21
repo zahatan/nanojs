@@ -48,6 +48,10 @@ class NOption {
         return this.values.hasOwnProperty(name) ? this.values[name] : undefined;
     }
 
+    set(name, value) {
+        this.values[name] = value;
+    }
+
     static unload(selector) {
         return NOption.option_registry.hasOwnProperty(selector) ? NOption.option_registry[selector] : undefined;
     }

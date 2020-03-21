@@ -1,6 +1,41 @@
-class NModel {
+class NObject {
+
+    prototypes = undefined;
+
+    constructor() {
+    }
+
+    listPrototypes(prefix) {
+        if(this.prototypes === undefined) {
+            this.prototypes = this._getPrototypes(Object.getPrototypeOf(this));
+        }
+        return this.prototypes.filter(function (p) {
+            return p.startsWith(prefix);
+        });
+    }
+
+    hasPrototype(name) {
+       return this[name] !== undefined;
+    }
+
+    _getPrototypes(prototype) {
+
+        let prototypes = Object.getOwnPropertyNames(prototype).filter(function (p) {
+            return typeof prototype[p] === 'function'
+        });
+
+        let constructor = Object.getPrototypeOf(prototype.constructor);
+        if(constructor.name !== 'NObject') {
+            if(constructor.prototype) {
+                let tmp = this._getPrototypes(constructor.prototype);
+                prototypes = prototypes.concat(tmp);
+            }
+        }
+        return prototypes;
+    }
 
 }
+
 class NOption {
 
     static option_registry = {};
@@ -51,6 +86,10 @@ class NOption {
         return this.values.hasOwnProperty(name) ? this.values[name] : undefined;
     }
 
+    set(name, value) {
+        this.values[name] = value;
+    }
+
     static unload(selector) {
         return NOption.option_registry.hasOwnProperty(selector) ? NOption.option_registry[selector] : undefined;
     }
@@ -58,6 +97,143 @@ class NOption {
     static load(selector, options){
         NOption.option_registry[selector] = options;
     }
+}
+class NListener extends NObject {
+
+    /**
+     *
+     * @param selector
+     */
+    constructor(selector) {
+        super();
+        if(selector instanceof Element) {
+            this.elt = selector;
+        } else {
+            this.elt = document.querySelector(selector);
+        }
+        if(this.elt) {
+            let prototypes = this.listPrototypes('on_');
+            prototypes.forEach(function(p, index){
+                let event = p.substr(3);
+                this.elt.addEventListener(event, this[p].bind(this));
+            }, this);
+        }
+    }
+}
+
+class NListenable {
+
+    constructor(options) {
+        this.options = new NOption(options);
+
+
+    }
+
+    registerListeners() {
+        /**
+         * Register listeners from options
+         */
+
+         let _options = this.options.getOptions();
+
+         if(this.elt) {
+             if(_options.hasOwnProperty('listeners')) {
+                 for(const i in _options.listeners) {
+                     this.registerListener(_options.listeners[i]);
+                 }
+             }
+         }
+    }
+
+    registerListener(listener) {
+
+        try {
+            let instance = new listener(this.elt);
+            instance.target = this;
+        } catch (e) {
+            console.error(e);
+            console.error('Listener MUST be a constructable');
+        }
+    }
+}
+
+class NView extends NListenable {
+    constructor(selector, options) {
+        super(options);
+
+        if(selector instanceof Element) {
+            this.elt = selector;
+        } else {
+            this.elt = document.querySelector(selector);
+        }
+
+        if(this.elt) {
+            this._setupViewID();
+            this.elt.setAttribute('nano-view', '');
+
+            this.registerListeners();
+        } else {
+            console.error('View element not found');
+        }
+    }
+
+    /**
+     *
+     * @private
+     */
+    _setupViewID()
+    {
+        if(this.elt.hasAttribute('id')) {
+            let elt_id = this.elt.getAttribute('id');
+            if(elt_id.trim() !== '') {
+                this.id = elt_id;
+            } else {
+                this.id = NViewBuilder.generateViewId();
+                this.elt.setAttribute('id', this.id);
+            }
+        } else {
+            this.id = NViewBuilder.generateViewId();
+            this.elt.setAttribute('id', this.id);
+        }
+    }
+
+    getElement() {
+        return this.elt;
+    }
+}
+
+class NViewBuilder {
+
+    static id_index = 0;
+
+    /**
+     *
+     * @param selector
+     * @param options
+     */
+    static setup(selector, options) {
+        let elements = document.querySelectorAll(selector);
+        elements.forEach(function(element, index) {
+            if(!element.hasAttribute('nano-view')) {
+                let view = new NView(element, options);
+            }
+        });
+    }
+
+    /**
+     *
+     */
+    static generateViewId()
+    {
+        let rand = 100000 + Math.floor(899999 * Math.random());
+        let id = '_nano_id_' + NViewBuilder.id_index + '_' + rand;
+        NViewBuilder.id_index++;
+        return id;
+    }
+}
+
+class NModel {
+
 }
 
 class NRequest {
@@ -141,10 +317,6 @@ class NRequest {
      */
     send(data) {
 
-        if(data !== undefined && !(data instanceof NRequestData)) {
-            console.error();
-        }
-
         let url = this.url;
         let method = this.method.toUpperCase();
 
@@ -161,7 +333,10 @@ class NRequest {
         if(method === 'GET') {
             this.xhr.send();
         } else {
-            this.xhr.send(data.toFormData());
+            if(data instanceof NRequestData) {
+                data = data.toFormData();
+            }
+            this.xhr.send(data);
         }
     }
 }
@@ -274,7 +449,7 @@ class NRequestStateListener {
                         let handler = request.response_handlers[i];
                         if(handler) {
 
-                            if(handler instanceof JsonResponseHandler) {
+                            if(request.options.get('type') === 'json') {
                                 try {
                                     response_json = JSON.parse(xhr.responseText);
                                 }
@@ -284,12 +459,12 @@ class NRequestStateListener {
 
                             if(xhr.status >= 200 && xhr.status < 400) {
                                 if(handler.on_request_success) {
-                                    handler.on_request_success.call(handler, xhr.status, xhr.responseText, response_json);
+                                    handler.on_request_success.call(handler, xhr.status, response_json || xhr.responseText);
                                 }
 
                             } else if(xhr.status >= 400) {
                                 if(handler.on_request_error) {
-                                    handler.on_request_error.call(handler, xhr.status, xhr.responseText, response_json);
+                                    handler.on_request_error.call(handler, xhr.status, response_json || xhr.responseText);
                                 }
                             }
                         }
@@ -301,8 +476,77 @@ class NRequestStateListener {
     }
 }
 
-class JsonResponseHandler {
+class RedirectResponseHandler {
+    on_request_success(xhr, response, json) {
+        if(response.hasOwnProperty('next')) {
+            window.location.href = response.next;
+        } else {
+            window.location.reload();
+        }
+    }
 
+    on_request_error(xhr, response, json) {
+
+    }
+}
+
+class ReloadResponseHandler {
+    on_request_success(xhr, response, json) {
+        window.location.reload();
+    }
+
+    on_request_error(xhr, response, json) {
+
+    }
+}
+
+class NTemplate {
+    /**
+     *
+     * @type {string}
+     */
+    static prefix = 'nn';
+
+    /**
+     *
+     * @type {string}
+     */
+    static namespace = 'https://github.com/zahatan/nanojs';
+
+    /**
+     *
+     * @param selector
+     */
+    constructor(selector) {
+        this._element = document.querySelector(selector);
+    }
+
+    render(data, target) {
+
+        let xml = this.prepareXML();
+
+        let context = new NTemplateContext(data, xml);
+
+        if(!(target instanceof Element)) {
+            target = document.querySelector(target);
+        }
+
+        if(target instanceof Element) {
+            context.process();
+            context.render(target);
+        }
+    }
+
+    /**
+     *
+     * @returns {Element}
+     */
+    prepareXML() {
+        let parser = new DOMParser();
+        let template_source = '<template xmlns:' + NTemplate.prefix + '="' + NTemplate.namespace + '">' + this._element.innerHTML + '</template>';
+        let xml = parser.parseFromString(template_source, "text/xml");
+        return xml.children.item(0);
+    }
 }
 class NTemplateContext {
 
@@ -559,54 +803,6 @@ class NTemplateContext {
         }
     }
 }
-class NTemplate {
-    /**
-     *
-     * @type {string}
-     */
-    static prefix = 'nn';
-
-    /**
-     *
-     * @type {string}
-     */
-    static namespace = 'https://github.com/zahatan/nanojs';
-
-    /**
-     *
-     * @param selector
-     */
-    constructor(selector) {
-        this._element = document.querySelector(selector);
-    }
-
-    render(data, target) {
-
-        let xml = this.prepareXML();
-
-        let context = new NTemplateContext(data, xml);
-
-        if(!(target instanceof Element)) {
-            target = document.querySelector(target);
-        }
-
-        if(target instanceof Element) {
-            context.process();
-            context.render(target);
-        }
-    }
-
-    /**
-     *
-     * @returns {Element}
-     */
-    prepareXML() {
-        let parser = new DOMParser();
-        let template_source = '<template xmlns:' + NTemplate.prefix + '="' + NTemplate.namespace + '">' + this._element.innerHTML + '</template>';
-        let xml = parser.parseFromString(template_source, "text/xml");
-        return xml.children.item(0);
-    }
-}
 class NTemplateProcessor {
 
     static _tag_registry = {};
@@ -656,112 +852,46 @@ class NTemplateProcessor {
     }
 }
 
-class NView {
-    constructor(selector, options) {
+class NForm extends NView {
 
-        if(selector instanceof Element) {
-            this.elt = selector;
+    constructor(selector, request) {
+        super(selector);
+        if(request !== undefined) {
+            this.request = new request();
         } else {
-            this.elt = document.querySelector(selector);
+            this.request = new NRequest();
         }
 
-        this.listeners = [];
+        this.elt.setAttribute('nn-form', '');
 
-        this._setupViewID();
-        this.elt.setAttribute('nano-view', '');
-
-        this.options = new NOption(options);
-
-        let globalOptions = NOption.unload(selector);
-        this.options.merge(globalOptions);
-        this._setupListeners();
+        this.request.prepare(this.elt.method || 'post', this.elt.action);
+        this.registerListener(NFormListener);
     }
 
-    /**
-     *
-     * @private
-     */
-    _setupListeners() {
-
-        let objectOptions = this.options.getOptions();
-
-        if(objectOptions.hasOwnProperty('listeners')) {
-            this.listeners = objectOptions.listeners;
-            for(const i in this.listeners) {
-                let listener = this.listeners[i];
-                this.registerListener(listener);
-            }
-        }
+    submit() {
+        let data = new FormData(this.elt);
+        this.request.send(data);
     }
 
-    /**
-     *
-     * @private
-     */
-    _setupViewID()
-    {
-        if(this.elt.hasAttribute('id')) {
-            let elt_id = this.elt.getAttribute('id');
-            if(elt_id.trim() !== '') {
-                this.id = elt_id;
-            } else {
-                this.id = NViewBuilder.generateViewId();
-                this.elt.setAttribute('id', this.id);
-            }
-        } else {
-            this.id = NViewBuilder.generateViewId();
-            this.elt.setAttribute('id', this.id);
-        }
-    }
 
-    registerListener(listener) {
-        let instance = new listener(this);
-        instance.view = this;
 
-        let prototypes = Object.getOwnPropertyNames(listener.prototype).filter(function (p) {
-            return typeof listener.prototype[p] === 'function';
-        });
-
-        prototypes.forEach(function(p, index){
-            if(p.startsWith('on_')) {
-                let event = p.substr(3);
-                this.elt.addEventListener(event, listener.prototype[p].bind(instance));
+    static register_all() {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function(form){
+            if(!form.hasAttribute('nn-form')) {
+                let f = new this(form);
             }
         }, this);
-
-        this.listeners.push(instance);
     }
 }
 
-class NViewBuilder {
-
-    static id_index = 0;
-
-    /**
-     *
-     * @param selector
-     * @param options
-     */
-    static setup(selector, options) {
-        let elements = document.querySelectorAll(selector);
-        elements.forEach(function(element, index) {
-            if(!element.hasAttribute('nano-view')) {
-                let view = new NView(element, options);
-            }
-        });
-    }
-
-    /**
-     *
-     */
-    static generateViewId()
-    {
-        let rand = 100000 + Math.floor(899999 * Math.random());
-        let id = '_nano_id_' + NViewBuilder.id_index + '_' + rand;
-        NViewBuilder.id_index++;
-        return id;
+class NFormListener extends NListener {
+    on_submit(event) {
+        event.preventDefault();
+        this.target.submit();
     }
 }
+
 class NCallableTagProcessor {
 
     static _name = 'callable';
@@ -1205,5 +1335,19 @@ class LaravelRequest extends NRequest {
             this.headers['X-CSRF-TOKEN'] = header.getAttribute('content');
         }
 
+    }
+}
+
+class LaravelForm extends NForm {
+    constructor(selector) {
+        super(selector, LaravelRequest);
+
+        this.request.options.set('type', 'json');
+
+        this.request.registerResponseHandler(this);
+    }
+
+    on_request_error(xhr, response, json) {
+        console.log('error', response);
     }
 }

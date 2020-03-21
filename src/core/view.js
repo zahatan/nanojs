@@ -1,5 +1,6 @@
-class NView {
+class NView extends NListenable {
     constructor(selector, options) {
+        super(options);
 
         if(selector instanceof Element) {
             this.elt = selector;
@@ -7,32 +8,13 @@ class NView {
             this.elt = document.querySelector(selector);
         }
 
-        this.listeners = [];
+        if(this.elt) {
+            this._setupViewID();
+            this.elt.setAttribute('nano-view', '');
 
-        this._setupViewID();
-        this.elt.setAttribute('nano-view', '');
-
-        this.options = new NOption(options);
-
-        let globalOptions = NOption.unload(selector);
-        this.options.merge(globalOptions);
-        this._setupListeners();
-    }
-
-    /**
-     *
-     * @private
-     */
-    _setupListeners() {
-
-        let objectOptions = this.options.getOptions();
-
-        if(objectOptions.hasOwnProperty('listeners')) {
-            this.listeners = objectOptions.listeners;
-            for(const i in this.listeners) {
-                let listener = this.listeners[i];
-                this.registerListener(listener);
-            }
+            this.registerListeners();
+        } else {
+            console.error('View element not found');
         }
     }
 
@@ -56,22 +38,8 @@ class NView {
         }
     }
 
-    registerListener(listener) {
-        let instance = new listener(this);
-        instance.view = this;
-
-        let prototypes = Object.getOwnPropertyNames(listener.prototype).filter(function (p) {
-            return typeof listener.prototype[p] === 'function';
-        });
-
-        prototypes.forEach(function(p, index){
-            if(p.startsWith('on_')) {
-                let event = p.substr(3);
-                this.elt.addEventListener(event, listener.prototype[p].bind(instance));
-            }
-        }, this);
-
-        this.listeners.push(instance);
+    getElement() {
+        return this.elt;
     }
 }
 

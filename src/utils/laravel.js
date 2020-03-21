@@ -8,3 +8,17 @@ class LaravelRequest extends NRequest {
 
     }
 }
+
+class LaravelForm extends NForm {
+    constructor(selector) {
+        super(selector, LaravelRequest);
+
+        this.request.options.set('type', 'json');
+
+        this.request.registerResponseHandler(this);
+    }
+
+    on_request_error(xhr, response, json) {
+        console.log('error', response);
+    }
+}

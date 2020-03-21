@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 class NActivityIndicator {
 
     constructor(selector) {

@@ -13,22 +13,18 @@
 <script src="/js/nano.js" type="text/javascript"></script>
 <script type="text/javascript">
     window.addEventListener('DOMContentLoaded', (event) => {
-        class InputListener1 {
-            constructor() {
+        class InputListener1 extends NListener {
 
-            }
             on_keyup(event){
-                console.log('keyup_1', event);
+                console.log('keyup_1', this.target);
             }
             on_change(event) {
-                console.log('value is:', this.view.elt.value);
+                console.log('value is:', this.target.elt.value);
             }
         }
 
-        class InputListener2 {
-            constructor() {
+        class InputListener2 extends NListener {
 
-            }
             on_keyup(event){
                 console.log('keyup_2', event);
             }
