@@ -322,7 +322,7 @@ class NRequest {
 
         if(this.xhr.readyState !== XMLHttpRequest.OPENED) {
             if(method === 'GET' && data !== undefined) {
-                let queryString = data.toQueryString();
+                let queryString = this.toQueryString(data);
                 if(queryString) {
                     url = url + '?' + queryString;
                 }
@@ -337,6 +337,18 @@ class NRequest {
                 data = data.toFormData();
             }
             this.xhr.send(data);
+        }
+    }
+
+    toQueryString(data) {
+        if(data instanceof NRequestData) {
+            return data.toQueryString();
+        } else {
+            let rdata = new NRequestData();
+            for (let key of data.keys()) {
+                rdata.append(key, data.get(key));
+            }
+            return rdata.toQueryString();
         }
     }
 }
@@ -873,8 +885,6 @@ class NForm extends NView {
         this.request.send(data);
     }
 
-
-
     static register_all() {
         const forms = document.querySelectorAll('form');
         forms.forEach(function(form){
@@ -1270,31 +1280,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
     NTemplateProcessor.registerAttr(NTextAttributeProcessor);
     NTemplateProcessor.registerAttr(NTextEscapeAttributeProcessor);
 });
-class NActivityIndicator {
-
-    constructor(selector) {
-        this.elt = document.querySelector(selector);
-    }
-
-    onRequestStateChange(request, state, xhr) {
-        switch (state) {
-            case XMLHttpRequest.OPENED:
-                if(this.elt) {
-                    this.elt.style.display = 'inline-block';
-                }
-                break;
-            case XMLHttpRequest.HEADERS_RECEIVED:
-                break;
-            case XMLHttpRequest.LOADING:
-                break;
-            case XMLHttpRequest.DONE:
-                if(this.elt) {
-                    this.elt.style.display = 'none';
-                }
-                break;
-        }
-    }
-}
 class NJsonUtils {
     static explode(arr) {
         let object = {};

@@ -85,7 +85,7 @@ class NRequest {
 
         if(this.xhr.readyState !== XMLHttpRequest.OPENED) {
             if(method === 'GET' && data !== undefined) {
-                let queryString = data.toQueryString();
+                let queryString = this.toQueryString(data);
                 if(queryString) {
                     url = url + '?' + queryString;
                 }
@@ -100,6 +100,18 @@ class NRequest {
                 data = data.toFormData();
             }
             this.xhr.send(data);
+        }
+    }
+
+    toQueryString(data) {
+        if(data instanceof NRequestData) {
+            return data.toQueryString();
+        } else {
+            let rdata = new NRequestData();
+            for (let key of data.keys()) {
+                rdata.append(key, data.get(key));
+            }
+            return rdata.toQueryString();
         }
     }
 }
